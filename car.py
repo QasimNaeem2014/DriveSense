@@ -226,14 +226,9 @@ if 'recommended_cars' not in st.session_state:
     st.session_state.recommended_cars = []
 if 'page' not in st.session_state:
     st.session_state.page = "Find My Car"
-if 'api_key_input' not in st.session_state:
-    st.session_state.api_key_input = ""
 
 
 # Functions
-# Image fetching removed as per user request
-
-
 def initialize_gemini(api_key):
     """Initialize Gemini client"""
     try:
@@ -285,7 +280,7 @@ def get_gemini_response(client, prompt, image_bytes=None):
         return f"Error: {error_msg}"
 
 
-# Initialize Gemini client
+# Initialize Gemini client from .env file
 env_api_key = os.getenv("GEMINI_API_KEY")
 
 if env_api_key and not st.session_state.gemini_client:
@@ -300,27 +295,11 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# API Key input if not already set
+# Check if API key is configured
 if not st.session_state.gemini_client:
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("### 🔑 Enter Your Gemini API Key")
-        api_key = st.text_input("", type="password",
-                                placeholder="Paste your Gemini API key here",
-                                help="Get your API key from Google AI Studio",
-                                key="api_input")
-
-        if st.button("Connect", use_container_width=True):
-            if api_key:
-                with st.spinner("Connecting to Gemini AI..."):
-                    st.session_state.gemini_client = initialize_gemini(api_key)
-                    if st.session_state.gemini_client:
-                        st.success("Connected to Gemini AI! 🎉")
-                        time.sleep(1)
-                        st.rerun()
-            else:
-                st.warning("Please enter your API key")
-        st.markdown("---")
+    st.error("⚠️ GEMINI_API_KEY not found in .env file. Please add your API key to the .env file and restart the app.")
+    st.info("Create a .env file in your project directory and add: GEMINI_API_KEY=your_api_key_here")
+    st.stop()
 
 # Navigation
 col1, col2, col3 = st.columns([1, 2, 1])
@@ -346,55 +325,52 @@ if page == "Find My Car":
     st.markdown("Tell us your preferences and we'll recommend the best cars for you!")
     st.info("💡 Please provide specific car model names (e.g., Toyota Corolla, Honda Civic, Suzuki Alto) for accurate recommendations.")
 
-    if not st.session_state.gemini_client:
-        st.warning("Please enter your Gemini API key in the sidebar to get started!")
-    else:
-        # Preference Form
-        st.markdown("### Your Preferences")
+    # Preference Form
+    st.markdown("### Your Preferences")
 
-        col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-        with col1:
-            budget = st.selectbox("Budget Range",
-                                  ["Under Rs. 20 Lakh", "Rs. 20-30 Lakh", "Rs. 30-50 Lakh",
-                                   "Rs. 50-75 Lakh", "Rs. 75 Lakh - 1 Crore", "Over Rs. 1 Crore"])
+    with col1:
+        budget = st.selectbox("Budget Range",
+                              ["Under Rs. 20 Lakh", "Rs. 20-30 Lakh", "Rs. 30-50 Lakh",
+                               "Rs. 50-75 Lakh", "Rs. 75 Lakh - 1 Crore", "Over Rs. 1 Crore"])
 
-            car_type = st.selectbox("Car Type",
-                                    ["Sedan", "SUV", "Truck", "Coupe",
-                                     "Hatchback", "Minivan", "Electric", "Hybrid"])
+        car_type = st.selectbox("Car Type",
+                                ["Sedan", "SUV", "Truck", "Coupe",
+                                 "Hatchback", "Minivan", "Electric", "Hybrid"])
 
-            usage = st.selectbox("Primary Use",
-                                 ["Daily Commute", "Family Transport",
-                                  "Weekend Fun", "Off-Road", "Luxury", "Business"])
+        usage = st.selectbox("Primary Use",
+                             ["Daily Commute", "Family Transport",
+                              "Weekend Fun", "Off-Road", "Luxury", "Business"])
 
-        with col2:
-            seating = st.selectbox("Seating Capacity",
-                                   ["2 seats", "4-5 seats", "6-7 seats", "8+ seats"])
+    with col2:
+        seating = st.selectbox("Seating Capacity",
+                               ["2 seats", "4-5 seats", "6-7 seats", "8+ seats"])
 
-            fuel_type = st.selectbox("Fuel Preference",
-                                     ["Gasoline", "Diesel", "Electric", "Hybrid", "No Preference"])
+        fuel_type = st.selectbox("Fuel Preference",
+                                 ["Gasoline", "Diesel", "Electric", "Hybrid", "No Preference"])
 
-            brand_pref = st.text_input("Preferred Brands (optional)",
-                                       placeholder="e.g., Toyota, Honda, Suzuki")
+        brand_pref = st.text_input("Preferred Brands (optional)",
+                                   placeholder="e.g., Toyota, Honda, Suzuki")
 
-        additional_notes = st.text_area("Additional Requirements (optional)",
-                                        placeholder="e.g., good cargo space, high safety rating, fuel efficient")
+    additional_notes = st.text_area("Additional Requirements (optional)",
+                                    placeholder="e.g., good cargo space, high safety rating, fuel efficient")
 
-        if st.button("Find My Perfect Car", use_container_width=True):
-            with st.spinner("Analyzing your preferences and finding the best cars..."):
-                # Store preferences
-                st.session_state.user_preferences = {
-                    "budget": budget,
-                    "car_type": car_type,
-                    "usage": usage,
-                    "seating": seating,
-                    "fuel_type": fuel_type,
-                    "brand_pref": brand_pref,
-                    "additional": additional_notes
-                }
+    if st.button("Find My Perfect Car", use_container_width=True):
+        with st.spinner("Analyzing your preferences and finding the best cars..."):
+            # Store preferences
+            st.session_state.user_preferences = {
+                "budget": budget,
+                "car_type": car_type,
+                "usage": usage,
+                "seating": seating,
+                "fuel_type": fuel_type,
+                "brand_pref": brand_pref,
+                "additional": additional_notes
+            }
 
-                # Create CONCISE prompt for Gemini
-                prompt = f"""Recommend 3 cars based on: Budget: {budget}, Type: {car_type}, Use: {usage}, Seating: {seating}, Fuel: {fuel_type}, Brands: {brand_pref if brand_pref else 'Any'}, Notes: {additional_notes if additional_notes else 'None'}
+            # Create CONCISE prompt for Gemini
+            prompt = f"""Recommend 3 cars based on: Budget: {budget}, Type: {car_type}, Use: {usage}, Seating: {seating}, Fuel: {fuel_type}, Brands: {brand_pref if brand_pref else 'Any'}, Notes: {additional_notes if additional_notes else 'None'}
 
 IMPORTANT: 
 1. Only recommend REAL car models that exist in Pakistan
@@ -409,15 +385,15 @@ Format EXACTLY like this for each car:
 
 Keep it SHORT and CLEAR. No long paragraphs."""
 
-                st.info("Sending request to Gemini AI...")
-                response = get_gemini_response(st.session_state.gemini_client, prompt)
+            st.info("Sending request to Gemini AI...")
+            response = get_gemini_response(st.session_state.gemini_client, prompt)
 
-                if response and not response.startswith("Error"):
-                    st.markdown("---")
-                    st.markdown("### Recommended Cars for You")
-                    st.markdown(f'<div class="car-card">{response}</div>', unsafe_allow_html=True)
-                else:
-                    st.error("Failed to get recommendations. Please check your API key and try again.")
+            if response and not response.startswith("Error"):
+                st.markdown("---")
+                st.markdown("### Recommended Cars for You")
+                st.markdown(f'<div class="car-card">{response}</div>', unsafe_allow_html=True)
+            else:
+                st.error("Failed to get recommendations. Please check your API key and try again.")
 
 elif page == "Compare Cars":
     st.title("⚖️ Compare Cars Side-by-Side")
@@ -435,9 +411,7 @@ elif page == "Compare Cars":
                              placeholder="E.g., Honda Civic 2024")
 
     if st.button("⚖️ Compare Now", use_container_width=True):
-        if not st.session_state.gemini_client:
-            st.error("⚠️ Please enter your Gemini API key first!")
-        elif car1 and car2:
+        if car1 and car2:
             st.markdown("---")
             st.markdown("### 📊 Detailed Comparison")
 
@@ -478,9 +452,7 @@ Keep it SHORT."""
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: #c4b5fd; padding: 1rem;'>
-    <p>Developer: Muhammad Qasim Naeem ❤
-
-Made with Love & AI</p>
+    <p>Developer: Muhammad Qasim Naeem ❤️ Made with Love & AI</p>
     <p style='font-size: 0.8rem;'>14qasimnaeem.5239@gmail.com</p>
 </div>
 """, unsafe_allow_html=True)

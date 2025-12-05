@@ -16,7 +16,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Enhanced Custom CSS with black-purple theme
 st.markdown("""
 <style>
     /* Main background */
@@ -456,3 +455,4 @@ st.markdown("""
     <p style='font-size: 0.8rem;'>14qasimnaeem.5239@gmail.com</p>
 </div>
 """, unsafe_allow_html=True)
+

@@ -235,7 +235,7 @@ def initialize_gemini(api_key):
         client = genai.Client(api_key=api_key)
         # Test the connection
         test_response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-flash-latest",
             contents="Hello"
         )
         return client
@@ -259,7 +259,7 @@ def get_gemini_response(client, prompt, image_bytes=None):
             contents = prompt
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-flash-latest",
             contents=contents,
         )
 
@@ -280,34 +280,14 @@ def get_gemini_response(client, prompt, image_bytes=None):
         return f"Error: {error_msg}"
 
 
-# --- Robust API key retrieval (Streamlit secrets -> nested secrets -> .env) ---
-def _get_gemini_api_key():
-    # 1) Try top-level secret (Streamlit)
-    try:
-        key = st.secrets.get("GEMINI_API_KEY")
-    except Exception:
-        key = None
-
-    if not key:
-        try:
-            gemini_table = st.secrets.get("GEMINI") if hasattr(st, "secrets") else None
-            if gemini_table and isinstance(gemini_table, dict):
-                key = gemini_table.get("GEMINI_API_KEY") or gemini_table.get("API_KEY") or gemini_table.get("key")
-        except Exception:
-            pass
-
-    if not key:
-        key = os.getenv("GEMINI_API_KEY")
-
-    return key
-
-
-env_api_key = _get_gemini_api_key()
+# Initialize Gemini client from .env file
+env_api_key = os.getenv("GEMINI_API_KEY")
 
 if env_api_key and not st.session_state.gemini_client:
     st.session_state.gemini_client = initialize_gemini(env_api_key)
 
-
+# Main content
+# Animated Car Header
 st.markdown("""
 <div class="car-header">
     <div class="app-title">DRIVE SENSE</div>
@@ -315,8 +295,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# Check if API key is configured
 if not st.session_state.gemini_client:
-    st.error("⚠️ API KEY not found.")
+    st.error("⚠️ GEMINI_API_KEY not found in .env file. Please add your API key to the .env file and restart the app.")
+    st.info("Create a .env file in your project directory and add: GEMINI_API_KEY=your_api_key_here")
     st.stop()
 
 # Navigation

@@ -235,7 +235,7 @@ def initialize_gemini(api_key):
         client = genai.Client(api_key=api_key)
         # Test the connection
         test_response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model="gemini-flash-lite-latest",
             contents="Hello"
         )
         return client
@@ -259,7 +259,7 @@ def get_gemini_response(client, prompt, image_bytes=None):
             contents = prompt
 
         response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model="gemini-flash-lite-latest",
             contents=contents,
         )
 
